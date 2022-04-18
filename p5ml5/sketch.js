@@ -1,14 +1,35 @@
+// facial detection code from:
+// https://github.com/Creativeguru97/YouTube_tutorial/tree/master/Play_with_APIs/ml5_faceApi/face-api_videoInput/final
+
 let faceapi;
 let detections = [];
 
 let video;
 let canvas;
 
+// Play corresponding cat gif
+let mappingJson;
+
+// keep track of state to play corresponding gif
+let prevState = "sitting"; // default
+let curState = prevState;
+let curGif;
+
+// gifs for states
+let sitGif, walkGif;
+
+function preload() {
+  mappingJson = loadJSON("emotionMapResponse.json");
+  sitGif = loadGif("gifs/sitting.gif");
+  walkGif = loadGif("gifs/walk.gif");
+  curGif = walkGif;
+}
+
 function setup() {
   canvas = createCanvas(480, 360);
   canvas.id("canvas");
 
-  video = createCapture(VIDEO); // Creat the video: ビデオオブジェクトを作る
+  video = createCapture(VIDEO); // Create the video: ビデオオブジェクトを作る
   video.id("video");
   video.size(width, height);
 
@@ -21,6 +42,11 @@ function setup() {
 
   //Initialize the model: モデルの初期化
   faceapi = ml5.faceApi(video, faceOptions, faceReady);
+}
+
+function draw() {
+  // Draw gif
+  image(curGif, 0, 200);
 }
 
 function faceReady() {
