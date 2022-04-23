@@ -1,7 +1,6 @@
 const EXPRESSION_RECOGNITION = false;
-
-// facial detection code from:
-// https://github.com/Creativeguru97/YouTube_tutorial/tree/master/Play_with_APIs/ml5_faceApi/face-api_videoInput/final
+const IMAGE_H = 216;
+const IMAGE_W = 384;
 
 let faceapi;
 let detections = [];
@@ -13,18 +12,36 @@ let canvas;
 let mappingJson;
 
 // keep track of state to play corresponding gif
-let prevState = "sitting"; // default
+let prevState = "sit"; // default
 let curState = prevState;
 let curGif;
 
 // gifs for states
 let sitGif, walkGif;
 
+// move where we draw the gif if we are walking
+let gifPos;
+let gifPosDest;
+const STEP = 0.0005;
+let lerpAmt = 1;
+
+function stateToGif(state) {
+  switch (state) {
+    case "sit":
+      return sitGif;
+    case "walk":
+      return walkGif;
+    default:
+      console.log("Invalid state");
+      return;
+  }
+}
+
 function preload() {
   mappingJson = loadJSON("emotionMapResponse.json");
   sitGif = loadGif("gifs/sitting.gif");
   walkGif = loadGif("gifs/walk.gif");
-  curGif = walkGif;
+  curGif = stateToGif(curState);
 }
 
 function setup() {
@@ -32,26 +49,74 @@ function setup() {
   canvas.id("canvas");
 
   if (EXPRESSION_RECOGNITION) {
-    video = createCapture(VIDEO); // Create the video: ビデオオブジェクトを作る
-    video.id("video");
-    video.size(width / 2, height / 2);
-
-    const faceOptions = {
-      withLandmarks: true,
-      withExpressions: true,
-      withDescriptors: true,
-      minConfidence: 0.5,
-    };
-
-    //Initialize the model: モデルの初期化
-    faceapi = ml5.faceApi(video, faceOptions, faceReady);
+    setupFacialRecognition();
   }
+
+  gifPos = createVector(random(0, width - IMAGE_W), height - IMAGE_H);
+  gifPosDest = gifPos;
+
+  // For testing
+  button = createButton("Switch to walk");
+  button.mousePressed(switchToWalk);
+}
+
+function updateState() {
+  switch (curState) {
+    case "walk":
+      if (lerpAmt >= 1) {
+        curState = "sit";
+      }
+      return;
+    default:
+      return;
+  }
+}
+
+function switchToWalk() {
+  console.log("Switching to walk");
+  prevState = curState;
+  curState = "walk";
+  lerpAmt = 0;
+  gifPosDest = createVector(width, height - IMAGE_H);
 }
 
 function draw() {
   // Draw gif
   background(206);
-  image(curGif, 0, 200);
+
+  updateState();
+
+  // Calculate Gif's x position
+  let x = gifPos.x;
+  if (curState === "walk" && lerpAmt < 1) {
+    let target = p5.Vector.lerp(gifPos, gifPosDest, lerpAmt);
+    x = target.x;
+    lerpAmt += STEP;
+    console.log("x: ", x, "lerpAmt", lerpAmt);
+  }
+
+  curGif = stateToGif(curState);
+
+  image(curGif, x, height - IMAGE_H);
+}
+
+/************** EMOTION RECOGNITION  ***************/
+// facial detection code from:
+// https://github.com/Creativeguru97/YouTube_tutorial/tree/master/Play_with_APIs/ml5_faceApi/face-api_videoInput/final
+function setupFacialRecognition() {
+  video = createCapture(VIDEO); // Create the video: ビデオオブジェクトを作る
+  video.id("video");
+  video.size(width / 2, height / 2);
+
+  const faceOptions = {
+    withLandmarks: true,
+    withExpressions: true,
+    withDescriptors: true,
+    minConfidence: 0.5,
+  };
+
+  //Initialize the model: モデルの初期化
+  faceapi = ml5.faceApi(video, faceOptions, faceReady);
 }
 
 function faceReady() {
