@@ -1,3 +1,5 @@
+const EXPRESSION_RECOGNITION = false;
+
 // facial detection code from:
 // https://github.com/Creativeguru97/YouTube_tutorial/tree/master/Play_with_APIs/ml5_faceApi/face-api_videoInput/final
 
@@ -26,26 +28,29 @@ function preload() {
 }
 
 function setup() {
-  canvas = createCanvas(480, 360);
+  canvas = createCanvas(window.innerWidth, window.innerHeight);
   canvas.id("canvas");
 
-  video = createCapture(VIDEO); // Create the video: ビデオオブジェクトを作る
-  video.id("video");
-  video.size(width, height);
+  if (EXPRESSION_RECOGNITION) {
+    video = createCapture(VIDEO); // Create the video: ビデオオブジェクトを作る
+    video.id("video");
+    video.size(width / 2, height / 2);
 
-  const faceOptions = {
-    withLandmarks: true,
-    withExpressions: true,
-    withDescriptors: true,
-    minConfidence: 0.5,
-  };
+    const faceOptions = {
+      withLandmarks: true,
+      withExpressions: true,
+      withDescriptors: true,
+      minConfidence: 0.5,
+    };
 
-  //Initialize the model: モデルの初期化
-  faceapi = ml5.faceApi(video, faceOptions, faceReady);
+    //Initialize the model: モデルの初期化
+    faceapi = ml5.faceApi(video, faceOptions, faceReady);
+  }
 }
 
 function draw() {
   // Draw gif
+  background(206);
   image(curGif, 0, 200);
 }
 
