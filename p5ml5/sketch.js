@@ -94,10 +94,6 @@ function switchToWalk() {
       curGif = walkGif;
       gifPosStart = gifPos;
       gifPosDest = createVector(width / 2, height - IMAGE_H);
-
-      if (gifPosDest.x < gifPosStart.x) {
-        gifPostDest.x += width;
-      }
     }, SIT_TO_WALK_DUR);
   }
 }
@@ -118,6 +114,11 @@ function draw() {
   if (gifPos.x !== gifPosDest.x) {
     if (curState === "walk" && lerpAmt < 1) {
       let dest = createVector(gifPosDest.x, gifPosDest.y);
+
+      if (dest.x < gifPosStart.x) {
+        dest.x += width;
+      }
+
       console.log("Dest", dest, "pos", gifPos);
       let target = p5.Vector.lerp(gifPosStart, dest, lerpAmt);
       lerpAmt += STEP;
@@ -131,7 +132,7 @@ function draw() {
     }
   }
 
-  image(curGif, x > width ? x % width : x, height - IMAGE_H);
+  image(curGif, x % width, height - IMAGE_H);
 }
 
 /************** EMOTION RECOGNITION  ***************/
