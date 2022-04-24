@@ -18,12 +18,17 @@ let curGif;
 
 // gifs for states
 let sitGif, walkGif;
+let sitToWalkGif;
 
 // move where we draw the gif if we are walking
 let gifPos;
+let gifPosStart;
 let gifPosDest;
 const STEP = 0.0005;
 let lerpAmt = 1;
+
+// transition times
+const SIT_TO_WALK_DUR = 700;
 
 function stateToGif(state) {
   switch (state) {
@@ -41,6 +46,7 @@ function preload() {
   mappingJson = loadJSON("emotionMapResponse.json");
   sitGif = loadGif("gifs/sitting.gif");
   walkGif = loadGif("gifs/walk.gif");
+  sitToWalkGif = loadGif("gifs/sitToWalk.gif");
   curGif = stateToGif(curState);
 }
 
@@ -52,7 +58,8 @@ function setup() {
     setupFacialRecognition();
   }
 
-  gifPos = createVector(random(0, width - IMAGE_W), height - IMAGE_H);
+  const randX = random(0, width - IMAGE_W);
+  gifPos = createVector(width - IMAGE_W - 10, height - IMAGE_H);
   gifPosDest = gifPos;
 
   // For testing
@@ -65,6 +72,8 @@ function updateState() {
     case "walk":
       if (lerpAmt >= 1) {
         curState = "sit";
+        curGif = sitGif;
+        console.log("Finished walking, switching to sit");
       }
       return;
     default:
@@ -74,10 +83,29 @@ function updateState() {
 
 function switchToWalk() {
   console.log("Switching to walk");
-  prevState = curState;
-  curState = "walk";
-  lerpAmt = 0;
-  gifPosDest = createVector(width, height - IMAGE_H);
+
+  if (curState === "sit") {
+    curGif = sitToWalkGif;
+    setTimeout(() => {
+      console.log("Finished playing sit to walk transition");
+      prevState = curState;
+      curState = "walk";
+      lerpAmt = 0;
+      curGif = walkGif;
+      gifPosStart = gifPos;
+      gifPosDest = createVector(width / 2, height - IMAGE_H);
+
+      if (gifPosDest.x < gifPosStart.x) {
+        gifPostDest.x += width;
+      }
+    }, SIT_TO_WALK_DUR);
+  }
+}
+
+function switchToSit() {
+  console.log("Switching to sit");
+  curState = "sit";
+  curGif = sitGif;
 }
 
 function draw() {
@@ -86,18 +114,24 @@ function draw() {
 
   updateState();
 
-  // Calculate Gif's x position
-  let x = gifPos.x;
-  if (curState === "walk" && lerpAmt < 1) {
-    let target = p5.Vector.lerp(gifPos, gifPosDest, lerpAmt);
-    x = target.x;
-    lerpAmt += STEP;
-    console.log("x: ", x, "lerpAmt", lerpAmt);
+  let x = gifPosDest.x;
+  if (gifPos.x !== gifPosDest.x) {
+    if (curState === "walk" && lerpAmt < 1) {
+      let dest = createVector(gifPosDest.x, gifPosDest.y);
+      console.log("Dest", dest, "pos", gifPos);
+      let target = p5.Vector.lerp(gifPosStart, dest, lerpAmt);
+      lerpAmt += STEP;
+      x = Math.floor(target.x);
+      gifPos.x = x;
+      console.log("x: ", target.x, "lerpAmt", lerpAmt);
+    }
+  } else {
+    if (curState === "walk") {
+      switchToSit();
+    }
   }
 
-  curGif = stateToGif(curState);
-
-  image(curGif, x, height - IMAGE_H);
+  image(curGif, x > width ? x % width : x, height - IMAGE_H);
 }
 
 /************** EMOTION RECOGNITION  ***************/
