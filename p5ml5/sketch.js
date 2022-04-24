@@ -24,11 +24,12 @@ let sitToWalkGif;
 let gifPos;
 let gifPosStart;
 let gifPosDest;
-const STEP = 0.0005;
+let gifWraps;
+const STEP = 0.00001;
 let lerpAmt = 1;
 
 // transition times
-const SIT_TO_WALK_DUR = 700;
+const SIT_TO_WALK_DUR = 400;
 
 function stateToGif(state) {
   switch (state) {
@@ -59,12 +60,14 @@ function setup() {
   }
 
   const randX = random(0, width - IMAGE_W);
-  gifPos = createVector(width - IMAGE_W - 10, height - IMAGE_H);
+  gifPos = createVector(width / 4, height - IMAGE_H);
   gifPosDest = gifPos;
 
   // For testing
   button = createButton("Switch to walk");
   button.mousePressed(switchToWalk);
+
+  console.log("Width:", width);
 }
 
 function updateState() {
@@ -93,7 +96,13 @@ function switchToWalk() {
       lerpAmt = 0;
       curGif = walkGif;
       gifPosStart = gifPos;
-      gifPosDest = createVector(width / 2, height - IMAGE_H);
+      const randX = random(-width / 2, width / 2);
+      gifPosDest = createVector(Math.floor(gifPos.x + randX), height - IMAGE_H);
+      if (gifPosDest.x <= gifPos.x) {
+        gifPosDest.x += width;
+        gifWraps = true;
+      }
+      gifPrevPos = gifPosStart;
     }, SIT_TO_WALK_DUR);
   }
 }
@@ -102,6 +111,7 @@ function switchToSit() {
   console.log("Switching to sit");
   curState = "sit";
   curGif = sitGif;
+  gifPosDest = gifPos;
 }
 
 function draw() {
@@ -111,28 +121,24 @@ function draw() {
   updateState();
 
   let x = gifPosDest.x;
-  if (gifPos.x !== gifPosDest.x) {
+  if (Math.ceil(gifPos.x) < Math.floor(gifPosDest.x)) {
+    // currently walking
+    console.log("pos", gifPos.x, "dest", gifPosDest.x);
     if (curState === "walk" && lerpAmt < 1) {
-      let dest = createVector(gifPosDest.x, gifPosDest.y);
-
-      if (dest.x < gifPosStart.x) {
-        dest.x += width;
-      }
-
-      console.log("Dest", dest, "pos", gifPos);
-      let target = p5.Vector.lerp(gifPosStart, dest, lerpAmt);
+      x = Math.ceil((1 - lerpAmt) * gifPosStart.x + lerpAmt * gifPosDest.x);
+      console.log("lerp", lerpAmt, "x", x);
       lerpAmt += STEP;
-      x = Math.floor(target.x);
-      gifPos.x = x;
-      console.log("x: ", target.x, "lerpAmt", lerpAmt);
     }
-  } else {
-    if (curState === "walk") {
-      switchToSit();
-    }
+  } else if (curState === "walk") {
+    // turn off walk mode
+    gifPos.x %= width;
+    switchToSit();
+    x = gifPos.x;
   }
 
   image(curGif, x % width, height - IMAGE_H);
+  gifPos.x = x;
+  gifPrevPos = gifPos;
 }
 
 /************** EMOTION RECOGNITION  ***************/
