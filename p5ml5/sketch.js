@@ -2,6 +2,10 @@ const EXPRESSION_RECOGNITION = false;
 const IMAGE_H = 216;
 const IMAGE_W = 384;
 
+// transition times
+const TRANSITION_DUR = 600;
+const STRETCH_DUR = 900;
+
 let faceapi;
 let detections = [];
 
@@ -17,7 +21,7 @@ let curState = prevState;
 let curGif;
 
 // gifs for states
-let sitGif, walkGif;
+let sitGif, walkGif, stretchGif;
 let fromSitGif, ToSitGif;
 
 // move where we draw the gif if we are walking
@@ -28,9 +32,6 @@ let gifWraps;
 const STEP = 0.00001;
 let lerpAmt = 1;
 
-// transition times
-const SIT_TO_WALK_DUR = 400;
-
 // we queue up animations to play
 let animationQueue = [];
 
@@ -40,6 +41,7 @@ function stateToGif(state) {
       return sitGif;
     case "walk":
       return walkGif;
+
     default:
       console.log("Invalid state");
       return;
@@ -50,6 +52,7 @@ function preload() {
   mappingJson = loadJSON("emotionMapResponse.json");
   sitGif = loadGif("gifs/sitting.gif");
   walkGif = loadGif("gifs/walk.gif");
+  stretchGif = loadGif("gifs/stretch.gif");
   fromSitGif = loadGif("gifs/TransitFromSit.gif");
   ToSitGif = loadGif("gifs/TransitToSit.gif");
   curGif = stateToGif(curState);
@@ -69,7 +72,10 @@ function setup() {
 
   // For testing
   button = createButton("Switch to walk");
-  button.mousePressed(switchToWalk);
+  button.mousePressed(() => switchState("walk"));
+
+  button1 = createButton("Switch to stretch");
+  button1.mousePressed(() => switchState("stretch"));
 
   console.log("Width:", width);
 }
@@ -89,44 +95,45 @@ function updateState() {
 }
 
 function switchState(nextState) {
+  prevState = curState;
   curState = "transition";
+
   if (nextState === "sit") {
     curGif = ToSitGif;
     setTimeout(() => {
       curGif = sitGif;
-    }, SIT_TO_WALK_DUR);
-    console.log("Finished playing sit to transition");
+      curState = nextState;
+      console.log("Finished switching to SIT");
+    }, TRANSITION_DUR);
   } else {
     // not sitting, something active
+    curGif = fromSitGif;
     setTimeout(() => {
-      console.log("Finished playing sit to transition");
-      prevState = curState;
+      console.log("Finished playing sit to transition for ACTIVE");
       curState = nextState;
-      curGif = stateToGif(curState);
-
-      switch (curState) {
+      switch (nextState) {
         case "walk":
+          curGif = walkGif;
           lerpAmt = 0;
           gifPosStart = gifPos;
           const randX = random(IMAGE_W, width - IMAGE_W);
           gifPosDest = createVector(Math.floor(randX), height - IMAGE_H);
           if (gifPosDest.x <= gifPos.x) {
             gifPosDest.x += width;
-            gifWraps = true;
           }
           gifPrevPos = gifPosStart;
+          return;
+        case "stretch":
+          curGif = stretchGif;
+          setTimeout(() => {
+            switchState("sit");
+          }, STRETCH_DUR);
           return;
         default:
           return;
       }
-    }, SIT_TO_WALK_DUR);
+    }, TRANSITION_DUR);
   }
-}
-
-// used for debugging, callback for button press
-function switchToWalk() {
-  console.log("Switching to walk");
-  switchState("walk");
 }
 
 function draw() {
@@ -135,15 +142,18 @@ function draw() {
 
   updateState();
 
+  /*** Check if we are walking ***/
+  let isWalking =
+    Math.ceil(gifPos.x) < Math.floor(gifPosDest.x) &&
+    curState === "walk" &&
+    lerpAmt < 1;
   let x = gifPosDest.x;
-  if (Math.ceil(gifPos.x) < Math.floor(gifPosDest.x)) {
-    // currently walking
-    console.log("pos", gifPos.x, "dest", gifPosDest.x);
-    if (curState === "walk" && lerpAmt < 1) {
-      x = Math.ceil((1 - lerpAmt) * gifPosStart.x + lerpAmt * gifPosDest.x);
-      console.log("lerp", lerpAmt, "x", x);
-      lerpAmt += STEP;
-    }
+  if (isWalking) {
+    // console.log("pos", gifPos.x, "dest", gifPosDest.x);
+    x = Math.ceil((1 - lerpAmt) * gifPosStart.x + lerpAmt * gifPosDest.x);
+    // console.log("lerp", lerpAmt, "x", x);
+    lerpAmt += STEP;
+    circle(gifPosDest.x % width, height - IMAGE_H * 1.5, 40);
   } else if (curState === "walk") {
     // turn off walk mode
     gifPos.x %= width;
