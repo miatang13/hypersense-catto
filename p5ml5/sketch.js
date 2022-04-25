@@ -183,7 +183,7 @@ function draw() {
   // Draw gif
   background(206);
 
-  if (!isSequence) {
+  if (!isSequence && curState !== "walk") {
     // we don't want to interrupt sequence
     if (AnimationQueue[0]) {
       // we pop the next animation on queue
@@ -230,6 +230,7 @@ function draw() {
         console.log("We are turning off walk");
         gifPos.x %= width;
         x = gifPos.x;
+        gifPosDest.x = gifPos.x;
         switchState(AnimationQueue.shift());
       }
     }
