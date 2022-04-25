@@ -24,6 +24,19 @@ let curGif;
 let sitGif, walkGif, stretchGif;
 let fromSitGif, ToSitGif;
 
+// sequences for non-loop states
+let stretchSequence = [];
+let fromSitSequence = [];
+let toSitSequence = [];
+const STRETCH_SEQUENCE_LEN = 99; // inclusive
+const SIT_SEQUENCE_LEN = 32;
+let sequenceIdx = 0;
+let sequenceMax;
+let sequence;
+const FRAME_RATE = 4; // 60 times per second
+const SEQUENCE_DELAY = 0.04;
+let isSequence = false;
+
 // move where we draw the gif if we are walking
 let gifPos;
 let gifPosStart;
@@ -56,6 +69,24 @@ function preload() {
   fromSitGif = loadGif("gifs/TransitFromSit.gif");
   ToSitGif = loadGif("gifs/TransitToSit.gif");
   curGif = stateToGif(curState);
+
+  // load sequence
+  for (let i = 0; i <= STRETCH_SEQUENCE_LEN; i++) {
+    let img = loadImage("gifs/sequence/stretch/" + i.toString() + ".png");
+    stretchSequence.push(img);
+  }
+
+  for (let i = 0; i <= SIT_SEQUENCE_LEN; i++) {
+    let img = loadImage(
+      "gifs/sequence/TransitFromSit/" + i.toString() + ".png"
+    );
+    fromSitSequence.push(img);
+  }
+
+  for (let i = 0; i <= SIT_SEQUENCE_LEN; i++) {
+    let img = loadImage("gifs/sequence/TransitToSit/" + i.toString() + ".png");
+    toSitSequence.push(img);
+  }
 }
 
 function setup() {
@@ -94,21 +125,19 @@ function updateState() {
 
 function switchState(nextState) {
   prevState = curState;
-  curState = "transition";
+  curState = nextState;
 
   if (nextState === "sit") {
-    curGif = ToSitGif;
-    setTimeout(() => {
-      curGif = sitGif;
-      curState = nextState;
-      console.log("Finished switching to SIT");
-    }, TRANSITION_DUR);
+    isSequence = true;
+    sequenceIdx = 0;
+    sequence = toSitSequence;
+    sequenceMax = SIT_SEQUENCE_LEN;
+    curGif = sequence[sequenceIdx];
   } else {
     // not sitting, something active
     curGif = fromSitGif;
     setTimeout(() => {
       console.log("Finished playing sit to transition for ACTIVE");
-      curState = nextState;
       switch (nextState) {
         case "walk":
           curGif = walkGif;
@@ -122,10 +151,11 @@ function switchState(nextState) {
           gifPrevPos = gifPosStart;
           return;
         case "stretch":
-          curGif = stretchGif;
-          setTimeout(() => {
-            switchState("sit");
-          }, STRETCH_DUR);
+          sequenceIdx = 0;
+          sequence = stretchSequence;
+          sequenceMax = STRETCH_SEQUENCE_LEN;
+          curGif = sequence[sequenceIdx];
+          isSequence = true;
           return;
         default:
           return;
@@ -139,6 +169,26 @@ function draw() {
   background(206);
 
   updateState();
+
+  /*** Play sequence for other non-loop states */
+  if (isSequence) {
+    if (sequenceIdx <= sequenceMax * FRAME_RATE) {
+      // still playing sequence
+      image(
+        sequence[Math.floor(sequenceIdx / FRAME_RATE)],
+        gifPos.x,
+        height - IMAGE_H
+      );
+      sequenceIdx++;
+      console.log("sequenceIdx", sequenceIdx);
+      return;
+    } else {
+      // finished sequence
+      switchState("sit");
+    }
+  }
+
+  // console.log("Drawing gif");
 
   /*** Check if we are walking ***/
   let isWalking =
@@ -160,7 +210,6 @@ function draw() {
     switchState("sit");
     x = gifPos.x;
   }
-
   image(curGif, x % width, height - IMAGE_H);
   gifPos.x = x;
   gifPrevPos = gifPos;
