@@ -3,8 +3,8 @@ const IMAGE_H = 216;
 const IMAGE_W = 384;
 
 // transition times
-const TRANSITION_DUR = 600;
-const STRETCH_DUR = 900;
+const TRANSITION_DUR = 1333;
+const STRETCH_DUR = 1000;
 
 let faceapi;
 let detections = [];
@@ -84,9 +84,7 @@ function updateState() {
   switch (curState) {
     case "walk":
       if (lerpAmt >= 1) {
-        curState = "sit";
-        curGif = sitGif;
-        console.log("Finished walking, switching to sit");
+        switchState("sit");
       }
       return;
     default:
@@ -153,7 +151,9 @@ function draw() {
     x = Math.ceil((1 - lerpAmt) * gifPosStart.x + lerpAmt * gifPosDest.x);
     // console.log("lerp", lerpAmt, "x", x);
     lerpAmt += STEP;
-    circle(gifPosDest.x % width, height - IMAGE_H * 1.5, 40);
+
+    // draw destination
+    circle((gifPosDest.x % width) + IMAGE_W / 2, height - IMAGE_H * 1.5, 40);
   } else if (curState === "walk") {
     // turn off walk mode
     gifPos.x %= width;
