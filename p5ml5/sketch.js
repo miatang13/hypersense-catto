@@ -113,15 +113,18 @@ function setup() {
   console.log("Width:", width);
 }
 
-function addToQueue(state) {
-  if (state === "sit") {
+function addToQueue(stateToAdd) {
+  if (stateToAdd === "sit") {
     AnimationQueue.push("toSit");
     AnimationQueue.push("sit");
   } else {
+    // all active states must return back to sit
     AnimationQueue.push("fromSit");
-    AnimationQueue.push(state);
+    AnimationQueue.push(stateToAdd);
+    AnimationQueue.push("toSit");
+    AnimationQueue.push("sit");
   }
-  console.log("Pushed ", state, "onto queue:", AnimationQueue);
+  console.log("Pushed ", stateToAdd, "onto queue:", AnimationQueue);
 }
 
 function switchState(nextState) {
@@ -181,64 +184,60 @@ function draw() {
   background(206);
 
   if (!isSequence) {
+    // we don't want to interrupt sequence
     if (AnimationQueue[0]) {
+      // we pop the next animation on queue
       console.log("We have more animations to play");
       switchState(AnimationQueue.shift());
-    } else if (curState !== "sit") {
-      // we have an empty animation queue
-      // so we switch to sit if we are not already sitting
-      addToQueue("sit");
     }
   }
 
-  /*** Turn off walking when we've reached destination  */
-  if (curState === "walk" && lerpAmt >= 1) {
-    console.log("Finished walking");
-    addToQueue("sit");
-  }
-
-  /*** Check if we are walking ***/
-  let isWalking =
-    Math.ceil(gifPos.x) < Math.floor(gifPosDest.x) &&
-    curState === "walk" &&
-    lerpAmt < 1;
-
   /*** Play sequence for other non-loop states */
   if (isSequence) {
-    console.log("We are in sequence with state: ", curState);
+    // console.log("We are in sequence with state: ", curState);
     let idx = Math.floor(sequenceIdx / FRAME_RATE);
     image(sequence[idx], gifPos.x, height - IMAGE_H);
     if (sequenceIdx < sequenceMax * FRAME_RATE) {
       // still playing sequence
       sequenceIdx++;
-      console.log("sequenceIdx", idx);
+      // console.log("sequenceIdx", idx);
     } else {
       isSequence = false;
     }
     return;
+  } else {
+    /*** Check if we are walking ***/
+    let x = gifPosDest.x;
+    if (curState === "walk") {
+      let arrived = Math.ceil(gifPos.x) < Math.floor(gifPosDest.x);
+      let notFullLerp = lerpAmt < 1;
+      let isWalking = arrived && curState === "walk" && notFullLerp;
+      if (isWalking) {
+        console.log("pos", gifPos.x, "dest", gifPosDest.x);
+        x = Math.ceil((1 - lerpAmt) * gifPosStart.x + lerpAmt * gifPosDest.x);
+        // console.log("lerp", lerpAmt, "x", x);
+        lerpAmt += STEP;
+        // draw destination
+        circle(
+          (gifPosDest.x % width) + IMAGE_W / 2,
+          height - IMAGE_H * 1.5,
+          40
+        );
+      }
+
+      if (curState === "walk" && !isWalking) {
+        // turn off walk mode since we are not _walking_ anymore
+        console.log("We are turning off walk");
+        gifPos.x %= width;
+        x = gifPos.x;
+        switchState(AnimationQueue.shift());
+      }
+    }
+
+    image(curGif, x % width, height - IMAGE_H);
+    gifPos.x = x;
+    gifPrevPos = gifPos;
   }
-
-  // console.log("Drawing gif");
-
-  let x = gifPosDest.x;
-  if (isWalking) {
-    // console.log("pos", gifPos.x, "dest", gifPosDest.x);
-    x = Math.ceil((1 - lerpAmt) * gifPosStart.x + lerpAmt * gifPosDest.x);
-    // console.log("lerp", lerpAmt, "x", x);
-    lerpAmt += STEP;
-
-    // draw destination
-    circle((gifPosDest.x % width) + IMAGE_W / 2, height - IMAGE_H * 1.5, 40);
-  } else if (curState === "walk") {
-    // turn off walk mode
-    gifPos.x %= width;
-    switchState("sit");
-    x = gifPos.x;
-  }
-
-  image(curGif, x % width, height - IMAGE_H);
-  gifPos.x = x;
-  gifPrevPos = gifPos;
 }
 
 /************** EMOTION RECOGNITION  ***************/
