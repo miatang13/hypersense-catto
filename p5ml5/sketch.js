@@ -127,7 +127,6 @@ function updateState() {
 function switchState(nextState) {
   console.log("Switching to state", nextState);
   prevState = curState;
-  curState = nextState;
 
   switch (nextState) {
     case "walk":
@@ -143,12 +142,14 @@ function switchState(nextState) {
       toSit = true;
       fromSit = false;
       isSequence = false;
+      curState = nextState;
       return;
     case "sit":
       curGif = sitGif;
       isSequence = false;
       toSit = false;
       fromSit = false;
+      curState = nextState;
       return;
     case "stretch":
       isSequence = true;
@@ -158,6 +159,7 @@ function switchState(nextState) {
       curGif = sequence[sequenceIdx];
       toSit = true;
       fromSit = false;
+      curState = nextState;
       return;
     case "toSit":
       isSequence = true;
@@ -165,7 +167,8 @@ function switchState(nextState) {
       sequence = toSitSequence;
       sequenceMax = SIT_SEQUENCE_LEN;
       curGif = sequence[sequenceIdx];
-      toSit = true;
+      curState = nextState;
+      toSit = false;
       return;
     case "fromSit":
       isSequence = true;
@@ -174,6 +177,8 @@ function switchState(nextState) {
       sequenceMax = SIT_SEQUENCE_LEN;
       curGif = sequence[sequenceIdx];
       fromSit = true;
+      toSit = false;
+      return;
     default:
       return;
   }
@@ -201,12 +206,15 @@ function draw() {
     } else {
       // finished sequence
       console.log("We finished sequence");
-      if (toSit) {
+      isSequence = false;
+      if (curState === "toSit") {
         switchState("sit");
+      }
+      if (toSit) {
+        switchState("toSit");
       } else if (fromSit) {
         switchState(curState);
       }
-      isSequence = false;
     }
   }
 
