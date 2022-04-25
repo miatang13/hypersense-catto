@@ -18,7 +18,7 @@ let curGif;
 
 // gifs for states
 let sitGif, walkGif;
-let sitToWalkGif;
+let fromSitGif, ToSitGif;
 
 // move where we draw the gif if we are walking
 let gifPos;
@@ -30,6 +30,9 @@ let lerpAmt = 1;
 
 // transition times
 const SIT_TO_WALK_DUR = 400;
+
+// we queue up animations to play
+let animationQueue = [];
 
 function stateToGif(state) {
   switch (state) {
@@ -47,7 +50,8 @@ function preload() {
   mappingJson = loadJSON("emotionMapResponse.json");
   sitGif = loadGif("gifs/sitting.gif");
   walkGif = loadGif("gifs/walk.gif");
-  sitToWalkGif = loadGif("gifs/sitToWalk.gif");
+  fromSitGif = loadGif("gifs/TransitFromSit.gif");
+  ToSitGif = loadGif("gifs/TransitToSit.gif");
   curGif = stateToGif(curState);
 }
 
@@ -84,34 +88,45 @@ function updateState() {
   }
 }
 
-function switchToWalk() {
-  console.log("Switching to walk");
-
-  if (curState === "sit") {
-    curGif = sitToWalkGif;
+function switchState(nextState) {
+  curState = "transition";
+  if (nextState === "sit") {
+    curGif = ToSitGif;
     setTimeout(() => {
-      console.log("Finished playing sit to walk transition");
+      curGif = sitGif;
+    }, SIT_TO_WALK_DUR);
+    console.log("Finished playing sit to transition");
+  } else {
+    // not sitting, something active
+    setTimeout(() => {
+      console.log("Finished playing sit to transition");
       prevState = curState;
-      curState = "walk";
-      lerpAmt = 0;
-      curGif = walkGif;
-      gifPosStart = gifPos;
-      const randX = random(-width / 2, width / 2);
-      gifPosDest = createVector(Math.floor(gifPos.x + randX), height - IMAGE_H);
-      if (gifPosDest.x <= gifPos.x) {
-        gifPosDest.x += width;
-        gifWraps = true;
+      curState = nextState;
+      curGif = stateToGif(curState);
+
+      switch (curState) {
+        case "walk":
+          lerpAmt = 0;
+          gifPosStart = gifPos;
+          const randX = random(IMAGE_W, width - IMAGE_W);
+          gifPosDest = createVector(Math.floor(randX), height - IMAGE_H);
+          if (gifPosDest.x <= gifPos.x) {
+            gifPosDest.x += width;
+            gifWraps = true;
+          }
+          gifPrevPos = gifPosStart;
+          return;
+        default:
+          return;
       }
-      gifPrevPos = gifPosStart;
     }, SIT_TO_WALK_DUR);
   }
 }
 
-function switchToSit() {
-  console.log("Switching to sit");
-  curState = "sit";
-  curGif = sitGif;
-  gifPosDest = gifPos;
+// used for debugging, callback for button press
+function switchToWalk() {
+  console.log("Switching to walk");
+  switchState("walk");
 }
 
 function draw() {
@@ -132,7 +147,7 @@ function draw() {
   } else if (curState === "walk") {
     // turn off walk mode
     gifPos.x %= width;
-    switchToSit();
+    switchState("sit");
     x = gifPos.x;
   }
 
