@@ -29,7 +29,8 @@ let stretchSequence = [];
 let fromSitSequence = [];
 let toSitSequence = [];
 const STRETCH_SEQUENCE_LEN = 99; // inclusive
-const SIT_SEQUENCE_LEN = 32;
+const FROM_SIT_SEQUENCE_LEN = 32;
+const TO_SIT_SEQUENCE_LEN = 41;
 let sequenceIdx = 0;
 let sequenceMax;
 let sequence;
@@ -47,7 +48,7 @@ const STEP = 0.00001;
 let lerpAmt = 1;
 
 // we queue up animations to play
-let animationQueue = [];
+let AnimationQueue = [];
 
 function stateToGif(state) {
   switch (state) {
@@ -77,14 +78,14 @@ function preload() {
     stretchSequence.push(img);
   }
 
-  for (let i = 0; i <= SIT_SEQUENCE_LEN; i++) {
+  for (let i = 0; i <= FROM_SIT_SEQUENCE_LEN; i++) {
     let img = loadImage(
       "gifs/sequence/TransitFromSit/" + i.toString() + ".png"
     );
     fromSitSequence.push(img);
   }
 
-  for (let i = 0; i <= SIT_SEQUENCE_LEN; i++) {
+  for (let i = 0; i <= TO_SIT_SEQUENCE_LEN; i++) {
     let img = loadImage("gifs/sequence/TransitToSit/" + i.toString() + ".png");
     toSitSequence.push(img);
   }
@@ -104,24 +105,23 @@ function setup() {
 
   // For testing
   button = createButton("Switch to walk");
-  button.mousePressed(() => switchState("walk"));
+  button.mousePressed(() => addToQueue("walk"));
 
   button1 = createButton("Switch to stretch");
-  button1.mousePressed(() => switchState("stretch"));
+  button1.mousePressed(() => addToQueue("stretch"));
 
   console.log("Width:", width);
 }
 
-function updateState() {
-  switch (curState) {
-    case "walk":
-      if (lerpAmt >= 1) {
-        switchState("sit");
-      }
-      return;
-    default:
-      return;
+function addToQueue(state) {
+  if (state === "sit") {
+    AnimationQueue.push("toSit");
+    AnimationQueue.push("sit");
+  } else {
+    AnimationQueue.push("fromSit");
+    AnimationQueue.push(state);
   }
+  console.log("Pushed ", state, "onto queue:", AnimationQueue);
 }
 
 function switchState(nextState) {
@@ -139,16 +139,12 @@ function switchState(nextState) {
         gifPosDest.x += width;
       }
       gifPrevPos = gifPosStart;
-      toSit = true;
-      fromSit = false;
       isSequence = false;
       curState = nextState;
       return;
     case "sit":
       curGif = sitGif;
       isSequence = false;
-      toSit = false;
-      fromSit = false;
       curState = nextState;
       return;
     case "stretch":
@@ -157,27 +153,23 @@ function switchState(nextState) {
       sequence = stretchSequence;
       sequenceMax = STRETCH_SEQUENCE_LEN;
       curGif = sequence[sequenceIdx];
-      toSit = true;
-      fromSit = false;
       curState = nextState;
       return;
     case "toSit":
       isSequence = true;
       sequenceIdx = 0;
       sequence = toSitSequence;
-      sequenceMax = SIT_SEQUENCE_LEN;
+      sequenceMax = TO_SIT_SEQUENCE_LEN;
       curGif = sequence[sequenceIdx];
       curState = nextState;
-      toSit = false;
       return;
     case "fromSit":
       isSequence = true;
       sequenceIdx = 0;
       sequence = fromSitSequence;
-      sequenceMax = SIT_SEQUENCE_LEN;
+      sequenceMax = FROM_SIT_SEQUENCE_LEN;
       curGif = sequence[sequenceIdx];
-      fromSit = true;
-      toSit = false;
+      curState = nextState;
       return;
     default:
       return;
@@ -188,43 +180,46 @@ function draw() {
   // Draw gif
   background(206);
 
-  updateState();
-
-  /*** Play sequence for other non-loop states */
-  if (isSequence) {
-    console.log("We are in sequence");
-    if (sequenceIdx <= sequenceMax * FRAME_RATE) {
-      // still playing sequence
-      image(
-        sequence[Math.floor(sequenceIdx / FRAME_RATE)],
-        gifPos.x,
-        height - IMAGE_H
-      );
-      sequenceIdx++;
-      console.log("sequenceIdx", sequenceIdx);
-      return;
-    } else {
-      // finished sequence
-      console.log("We finished sequence");
-      isSequence = false;
-      if (curState === "toSit") {
-        switchState("sit");
-      }
-      if (toSit) {
-        switchState("toSit");
-      } else if (fromSit) {
-        switchState(curState);
-      }
+  if (!isSequence) {
+    if (AnimationQueue[0]) {
+      console.log("We have more animations to play");
+      switchState(AnimationQueue.shift());
+    } else if (curState !== "sit") {
+      // we have an empty animation queue
+      // so we switch to sit if we are not already sitting
+      addToQueue("sit");
     }
   }
 
-  // console.log("Drawing gif");
+  /*** Turn off walking when we've reached destination  */
+  if (curState === "walk" && lerpAmt >= 1) {
+    console.log("Finished walking");
+    addToQueue("sit");
+  }
 
   /*** Check if we are walking ***/
   let isWalking =
     Math.ceil(gifPos.x) < Math.floor(gifPosDest.x) &&
     curState === "walk" &&
     lerpAmt < 1;
+
+  /*** Play sequence for other non-loop states */
+  if (isSequence) {
+    console.log("We are in sequence with state: ", curState);
+    let idx = Math.floor(sequenceIdx / FRAME_RATE);
+    image(sequence[idx], gifPos.x, height - IMAGE_H);
+    if (sequenceIdx < sequenceMax * FRAME_RATE) {
+      // still playing sequence
+      sequenceIdx++;
+      console.log("sequenceIdx", idx);
+    } else {
+      isSequence = false;
+    }
+    return;
+  }
+
+  // console.log("Drawing gif");
+
   let x = gifPosDest.x;
   if (isWalking) {
     // console.log("pos", gifPos.x, "dest", gifPosDest.x);
