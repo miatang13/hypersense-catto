@@ -28,13 +28,15 @@ let fromSitGif, ToSitGif;
 let stretchSequence = [];
 let fromSitSequence = [];
 let toSitSequence = [];
+let shakeSequence = [];
 const STRETCH_SEQUENCE_LEN = 98; // inclusive
 const FROM_SIT_SEQUENCE_LEN = 32;
 const TO_SIT_SEQUENCE_LEN = 41;
+const SHAKE_SEQUENCE_LEN = 73;
 let sequenceIdx = 0;
 let sequenceMax;
 let sequence;
-const FRAME_RATE = 4; // 60 times per second
+const FRAME_RATE = 2; // 60 times per second
 const SEQUENCE_DELAY = 0.04;
 let isSequence = false;
 let toSit, fromSit;
@@ -72,23 +74,29 @@ function preload() {
   ToSitGif = loadGif("gifs/TransitToSit.gif");
   curGif = stateToGif(curState);
 
-  // load sequence
-  for (let i = 0; i <= STRETCH_SEQUENCE_LEN; i++) {
-    let img = loadImage("gifs/sequence/stretch/" + i.toString() + ".png");
-    stretchSequence.push(img);
-  }
+  let lengths = [
+    STRETCH_SEQUENCE_LEN,
+    FROM_SIT_SEQUENCE_LEN,
+    TO_SIT_SEQUENCE_LEN,
+    SHAKE_SEQUENCE_LEN,
+  ];
+  let sequences = [
+    stretchSequence,
+    fromSitSequence,
+    toSitSequence,
+    shakeSequence,
+  ];
+  let folderNames = ["stretch", "TransitFromSit", "TransitToSit", "shake"];
 
-  for (let i = 0; i <= FROM_SIT_SEQUENCE_LEN; i++) {
-    let img = loadImage(
-      "gifs/sequence/TransitFromSit/" + i.toString() + ".png"
-    );
-    fromSitSequence.push(img);
-  }
-
-  for (let i = 0; i <= TO_SIT_SEQUENCE_LEN; i++) {
-    let img = loadImage("gifs/sequence/TransitToSit/" + i.toString() + ".png");
-    toSitSequence.push(img);
-  }
+  lengths.forEach((len, index) => {
+    for (let i = 0; i <= len; i++) {
+      let img = loadImage(
+        "gifs/sequence/" + folderNames[index] + "/" + i.toString() + ".png"
+      );
+      sequences[index].push(img);
+    }
+    console.log(sequences[index]);
+  });
 }
 
 function setup() {
