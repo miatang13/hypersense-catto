@@ -28,7 +28,7 @@ let fromSitGif, ToSitGif;
 let stretchSequence = [];
 let fromSitSequence = [];
 let toSitSequence = [];
-const STRETCH_SEQUENCE_LEN = 99; // inclusive
+const STRETCH_SEQUENCE_LEN = 98; // inclusive
 const FROM_SIT_SEQUENCE_LEN = 32;
 const TO_SIT_SEQUENCE_LEN = 41;
 let sequenceIdx = 0;
