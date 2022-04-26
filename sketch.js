@@ -21,8 +21,7 @@ let curState = prevState;
 let curGif;
 
 // gifs for states
-let sitGif, walkGif, stretchGif;
-let fromSitGif, ToSitGif;
+let sitGif, walkGif;
 
 // sequences for non-loop states
 let stretchSequence = [];
@@ -39,7 +38,6 @@ let sequence;
 const FRAME_RATE = 2; // 60 times per second
 const SEQUENCE_DELAY = 0.04;
 let isSequence = false;
-let toSit, fromSit;
 
 // move where we draw the gif if we are walking
 let gifPos;
@@ -69,9 +67,6 @@ function preload() {
   mappingJson = loadJSON("emotionMapResponse.json");
   sitGif = loadGif("gifs/sitting.gif");
   walkGif = loadGif("gifs/walk.gif");
-  stretchGif = loadGif("gifs/stretch.gif");
-  fromSitGif = loadGif("gifs/TransitFromSit.gif");
-  ToSitGif = loadGif("gifs/TransitToSit.gif");
   curGif = stateToGif(curState);
 
   let lengths = [
@@ -117,6 +112,9 @@ function setup() {
 
   button1 = createButton("Switch to stretch");
   button1.mousePressed(() => addToQueue("stretch"));
+
+  button2 = createButton("Switch to shake");
+  button2.mousePressed(() => addToQueue("shake"));
 
   console.log("Width:", width);
 }
@@ -179,6 +177,14 @@ function switchState(nextState) {
       sequenceIdx = 0;
       sequence = fromSitSequence;
       sequenceMax = FROM_SIT_SEQUENCE_LEN;
+      curGif = sequence[sequenceIdx];
+      curState = nextState;
+      return;
+    case "shake":
+      isSequence = true;
+      sequenceIdx = 0;
+      sequence = shakeSequence;
+      sequenceMax = SHAKE_SEQUENCE_LEN;
       curGif = sequence[sequenceIdx];
       curState = nextState;
       return;
