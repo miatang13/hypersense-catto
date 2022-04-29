@@ -1,4 +1,6 @@
 {
-  "Neutral": "Sitting",
-  "Frustrated": "Walking"
+  "neutral": "sit",
+  "sad": "walk",
+  "disgusted": "shake",
+  "fearful": "stretch"
 }

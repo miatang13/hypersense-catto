@@ -1,4 +1,4 @@
-const EXPRESSION_RECOGNITION = false;
+const EXPRESSION_RECOGNITION = true;
 const IMAGE_H = 216;
 const IMAGE_W = 384;
 
@@ -90,7 +90,6 @@ function preload() {
       );
       sequences[index].push(img);
     }
-    console.log(sequences[index]);
   });
 }
 
@@ -195,7 +194,7 @@ function switchState(nextState) {
 
 function draw() {
   // Draw gif
-  background(206);
+  // background(206);
 
   if (!isSequence && curState !== "walk") {
     // we don't want to interrupt sequence
@@ -203,6 +202,39 @@ function draw() {
       // we pop the next animation on queue
       console.log("We have more animations to play");
       switchState(AnimationQueue.shift());
+    } else if (detections.length > 0) {
+      // we don't have more animations to play
+      // state must be sit
+
+      // We will detect emotions and add animation to queue if it's not neutral
+      let { neutral, happy, angry, sad, disgusted, surprised, fearful } =
+        detections[0].expressions;
+      const emotionArrStr = [
+        "neutral",
+        "happy",
+        "sad",
+        "disgusted",
+        "surprised",
+        "fearful",
+      ];
+      let emotionArr = [
+        neutral,
+        happy,
+        angry,
+        sad,
+        disgusted,
+        surprised,
+        fearful,
+      ];
+      let i = emotionArr.indexOf(Math.max(...emotionArr));
+      if (i !== 0) {
+        // not neutral
+        let emotionStr = emotionArrStr[i];
+        console.log("Detecting emotion: ", emotionStr);
+        if (mappingJson[emotionStr]) {
+          addToQueue(mappingJson[emotionStr]);
+        }
+      }
     }
   }
 
@@ -261,7 +293,8 @@ function draw() {
 function setupFacialRecognition() {
   video = createCapture(VIDEO); // Create the video: ビデオオブジェクトを作る
   video.id("video");
-  video.size(width / 2, height / 2);
+  video.size(width / 4, height / 4);
+  video.hide();
 
   const faceOptions = {
     withLandmarks: true,
@@ -288,39 +321,39 @@ function gotFaces(error, result) {
   detections = result; //Now all the data in this detections: 全ての検知されたデータがこのdetectionの中に
   // console.log(detections);
 
-  clear(); //Draw transparent background;: 透明の背景を描く
-  drawBoxs(detections); //Draw detection box: 顔の周りの四角の描画
-  drawLandmarks(detections); //// Draw all the face points: 全ての顔のポイントの描画
-  drawExpressions(detections, 20, 250, 14); //Draw face expression: 表情の描画
+  if (detections.length > 0) {
+    clear();
+    //If at least 1 face is detected: もし1つ以上の顔が検知されていたら
+    let { neutral, happy, angry, sad, disgusted, surprised, fearful } =
+      detections[0].expressions;
+    x = 5;
+    y = 5;
+    textYSpace = 15;
+    text("neutral:       " + nf(neutral * 100, 2, 2) + "%", x, y);
+    text("happiness: " + nf(happy * 100, 2, 2) + "%", x, y + textYSpace);
+    text("anger:        " + nf(angry * 100, 2, 2) + "%", x, y + textYSpace * 2);
+    text("sad:            " + nf(sad * 100, 2, 2) + "%", x, y + textYSpace * 3);
+    text(
+      "disgusted: " + nf(disgusted * 100, 2, 2) + "%",
+      x,
+      y + textYSpace * 4
+    );
+    text(
+      "surprised:  " + nf(surprised * 100, 2, 2) + "%",
+      x,
+      y + textYSpace * 5
+    );
+    text(
+      "fear:           " + nf(fearful * 100, 2, 2) + "%",
+      x,
+      y + textYSpace * 6
+    );
+  }
+
+  // clear(); //Draw transparent background;: 透明の背景を描く
+  // drawExpressions(detections, 20, 250, 14); //Draw face expression: 表情の描画
 
   faceapi.detect(gotFaces); // Call the function again at here: 認識実行の関数をここでまた呼び出す
-}
-
-function drawBoxs(detections) {
-  if (detections.length > 0) {
-    //If at least 1 face is detected: もし1つ以上の顔が検知されていたら
-    for (f = 0; f < detections.length; f++) {
-      let { _x, _y, _width, _height } = detections[f].alignedRect._box;
-      stroke(44, 169, 225);
-      strokeWeight(1);
-      noFill();
-      rect(_x, _y, _width, _height);
-    }
-  }
-}
-
-function drawLandmarks(detections) {
-  if (detections.length > 0) {
-    //If at least 1 face is detected: もし1つ以上の顔が検知されていたら
-    for (f = 0; f < detections.length; f++) {
-      let points = detections[f].landmarks.positions;
-      for (let i = 0; i < points.length; i++) {
-        stroke(44, 169, 225);
-        strokeWeight(3);
-        point(points[i]._x, points[i]._y);
-      }
-    }
-  }
 }
 
 function drawExpressions(detections, x, y, textYSpace) {
