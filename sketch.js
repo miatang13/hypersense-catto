@@ -271,7 +271,7 @@ function draw() {
   if (isSequence) {
     // console.log("We are in sequence with state: ", curState);
     let idx = Math.floor(sequenceIdx / FRAME_RATE);
-    image(sequence[idx], gifPos.x, height - IMAGE_H);
+    image(sequence[idx], gifPos.x, height - IMAGE_H * 2);
     if (sequenceIdx < sequenceMax * FRAME_RATE) {
       // still playing sequence
       sequenceIdx++;
