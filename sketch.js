@@ -116,7 +116,7 @@ function setup() {
   }
 
   const randX = random(0, width - IMAGE_W);
-  gifPos = createVector(width / 4, height - IMAGE_H * 2);
+  gifPos = createVector(width / 7, height - IMAGE_H * 1.5);
   gifPosDest = gifPos;
 
   if (DEBUG_ACTIONS) {
@@ -161,7 +161,7 @@ function switchState(nextState) {
       lerpAmt = 0;
       gifPosStart = gifPos;
       const randX = random(IMAGE_W, width - IMAGE_W);
-      gifPosDest = createVector(Math.floor(randX), height - IMAGE_H * 2);
+      gifPosDest = createVector(Math.floor(randX), height - IMAGE_H * 1.5);
       if (gifPosDest.x <= gifPos.x) {
         gifPosDest.x += width;
       }
@@ -271,7 +271,7 @@ function draw() {
   if (isSequence) {
     // console.log("We are in sequence with state: ", curState);
     let idx = Math.floor(sequenceIdx / FRAME_RATE);
-    image(sequence[idx], gifPos.x, height - IMAGE_H * 2);
+    image(sequence[idx], gifPos.x, height - IMAGE_H * 1.5);
     if (sequenceIdx < sequenceMax * FRAME_RATE) {
       // still playing sequence
       sequenceIdx++;
@@ -312,7 +312,7 @@ function draw() {
       }
     }
 
-    image(curGif, x % width, height - IMAGE_H * 2);
+    image(curGif, x % width, height - IMAGE_H * 1.5);
     gifPos.x = x;
     gifPrevPos = gifPos;
   }
