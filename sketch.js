@@ -6,7 +6,6 @@ const DEBUG_ACTIONS = false;
 const DEBUG_EXPRESSIONS = false;
 const DEBUG_WALK = false;
 
-
 // transition times
 const TRANSITION_DUR = 1333;
 const STRETCH_DUR = 1000;
@@ -81,16 +80,22 @@ function preload() {
     FROM_SIT_SEQUENCE_LEN,
     TO_SIT_SEQUENCE_LEN,
     SHAKE_SEQUENCE_LEN,
-    KNIT_SEQUENCE_LEN
+    KNIT_SEQUENCE_LEN,
   ];
   let sequences = [
     stretchSequence,
     fromSitSequence,
     toSitSequence,
     shakeSequence,
-    knitSequence
+    knitSequence,
   ];
-  let folderNames = ["stretch", "TransitFromSit", "TransitToSit", "shake", "knit"];
+  let folderNames = [
+    "stretch",
+    "TransitFromSit",
+    "TransitToSit",
+    "shake",
+    "knit",
+  ];
 
   lengths.forEach((len, index) => {
     for (let i = 0; i <= len; i++) {
@@ -295,7 +300,6 @@ function draw() {
             40
           );
         }
-
       }
 
       if (curState === "walk" && !isWalking) {
@@ -308,7 +312,7 @@ function draw() {
       }
     }
 
-    image(curGif, x % width, height - IMAGE_H);
+    image(curGif, x % width, height - IMAGE_H * 2);
     gifPos.x = x;
     gifPrevPos = gifPos;
   }
@@ -357,8 +361,16 @@ function gotFaces(error, result) {
       textYSpace = 15;
       text("neutral:       " + nf(neutral * 100, 2, 2) + "%", x, y);
       text("happiness: " + nf(happy * 100, 2, 2) + "%", x, y + textYSpace);
-      text("anger:        " + nf(angry * 100, 2, 2) + "%", x, y + textYSpace * 2);
-      text("sad:            " + nf(sad * 100, 2, 2) + "%", x, y + textYSpace * 3);
+      text(
+        "anger:        " + nf(angry * 100, 2, 2) + "%",
+        x,
+        y + textYSpace * 2
+      );
+      text(
+        "sad:            " + nf(sad * 100, 2, 2) + "%",
+        x,
+        y + textYSpace * 3
+      );
       text(
         "disgusted: " + nf(disgusted * 100, 2, 2) + "%",
         x,
@@ -377,7 +389,5 @@ function gotFaces(error, result) {
     }
   }
 
-
   faceapi.detect(gotFaces);
 }
-
