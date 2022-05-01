@@ -28,10 +28,12 @@ let stretchSequence = [];
 let fromSitSequence = [];
 let toSitSequence = [];
 let shakeSequence = [];
+let knitSequence = [];
 const STRETCH_SEQUENCE_LEN = 98; // inclusive
 const FROM_SIT_SEQUENCE_LEN = 32;
 const TO_SIT_SEQUENCE_LEN = 41;
 const SHAKE_SEQUENCE_LEN = 73;
+const KNIT_SEQUENCE_LEN = 165;
 let sequenceIdx = 0;
 let sequenceMax;
 let sequence;
@@ -74,14 +76,16 @@ function preload() {
     FROM_SIT_SEQUENCE_LEN,
     TO_SIT_SEQUENCE_LEN,
     SHAKE_SEQUENCE_LEN,
+    KNIT_SEQUENCE_LEN
   ];
   let sequences = [
     stretchSequence,
     fromSitSequence,
     toSitSequence,
     shakeSequence,
+    knitSequence
   ];
-  let folderNames = ["stretch", "TransitFromSit", "TransitToSit", "shake"];
+  let folderNames = ["stretch", "TransitFromSit", "TransitToSit", "shake", "knit"];
 
   lengths.forEach((len, index) => {
     for (let i = 0; i <= len; i++) {
@@ -114,6 +118,9 @@ function setup() {
 
   button2 = createButton("Switch to shake");
   button2.mousePressed(() => addToQueue("shake"));
+
+  button2 = createButton("Switch to knit");
+  button2.mousePressed(() => addToQueue("knit"));
 
   console.log("Width:", width);
 }
@@ -187,6 +194,13 @@ function switchState(nextState) {
       curGif = sequence[sequenceIdx];
       curState = nextState;
       return;
+    case "knit": 
+      isSequence = true;
+      sequenceIdx = 0;
+      sequence = knitSequence;
+      sequenceMax = KNIT_SEQUENCE_LEN;
+      curGif = sequence[sequenceIdx];
+      curState = nextState;
     default:
       return;
   }
