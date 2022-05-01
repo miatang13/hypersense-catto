@@ -2,7 +2,7 @@ const EXPRESSION_RECOGNITION = true;
 const IMAGE_H = 216;
 const IMAGE_W = 384;
 const EXPRESSION_THRESHOLD = 70;
-const DEBUG_ACTIONS = false;
+const DEBUG_ACTIONS = true;
 const DEBUG_EXPRESSIONS = false;
 const DEBUG_WALK = false;
 
