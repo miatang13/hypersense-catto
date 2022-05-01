@@ -1,6 +1,11 @@
 const EXPRESSION_RECOGNITION = true;
 const IMAGE_H = 216;
 const IMAGE_W = 384;
+const EXPRESSION_THRESHOLD = 70;
+const DEBUG_ACTIONS = false;
+const DEBUG_EXPRESSIONS = false;
+const DEBUG_WALK = false;
+
 
 // transition times
 const TRANSITION_DUR = 1333;
@@ -109,18 +114,20 @@ function setup() {
   gifPos = createVector(width / 4, height - IMAGE_H);
   gifPosDest = gifPos;
 
-  // For testing
-  button = createButton("Switch to walk");
-  button.mousePressed(() => addToQueue("walk"));
+  if (DEBUG_ACTIONS) {
+    // For testing
+    button = createButton("Switch to walk");
+    button.mousePressed(() => addToQueue("walk"));
 
-  button1 = createButton("Switch to stretch");
-  button1.mousePressed(() => addToQueue("stretch"));
+    button1 = createButton("Switch to stretch");
+    button1.mousePressed(() => addToQueue("stretch"));
 
-  button2 = createButton("Switch to shake");
-  button2.mousePressed(() => addToQueue("shake"));
+    button2 = createButton("Switch to shake");
+    button2.mousePressed(() => addToQueue("shake"));
 
-  button2 = createButton("Switch to knit");
-  button2.mousePressed(() => addToQueue("knit"));
+    button2 = createButton("Switch to knit");
+    button2.mousePressed(() => addToQueue("knit"));
+  }
 
   console.log("Width:", width);
 }
@@ -194,7 +201,7 @@ function switchState(nextState) {
       curGif = sequence[sequenceIdx];
       curState = nextState;
       return;
-    case "knit": 
+    case "knit":
       isSequence = true;
       sequenceIdx = 0;
       sequence = knitSequence;
@@ -226,6 +233,7 @@ function draw() {
       const emotionArrStr = [
         "neutral",
         "happy",
+        "angry",
         "sad",
         "disgusted",
         "surprised",
@@ -240,9 +248,11 @@ function draw() {
         surprised,
         fearful,
       ];
-      let i = emotionArr.indexOf(Math.max(...emotionArr));
-      if (i !== 0) {
-        // not neutral
+      let maxScore = Math.max(...emotionArr);
+      let i = emotionArr.indexOf(maxScore);
+
+      if (i !== 0 && maxScore * 100 >= EXPRESSION_THRESHOLD) {
+        // not neutral and goes over threshold
         let emotionStr = emotionArrStr[i];
         console.log("Detecting emotion: ", emotionStr);
         if (mappingJson[emotionStr]) {
@@ -273,16 +283,19 @@ function draw() {
       let notFullLerp = lerpAmt < 1;
       let isWalking = arrived && curState === "walk" && notFullLerp;
       if (isWalking) {
-        console.log("pos", gifPos.x, "dest", gifPosDest.x);
         x = Math.ceil((1 - lerpAmt) * gifPosStart.x + lerpAmt * gifPosDest.x);
         // console.log("lerp", lerpAmt, "x", x);
         lerpAmt += STEP;
-        // draw destination
-        circle(
-          (gifPosDest.x % width) + IMAGE_W / 2,
-          height - IMAGE_H * 1.5,
-          40
-        );
+        if (DEBUG_WALK) {
+          // draw destination
+          console.log("pos", gifPos.x, "dest", gifPosDest.x);
+          circle(
+            (gifPosDest.x % width) + IMAGE_W / 2,
+            height - IMAGE_H * 1.5,
+            40
+          );
+        }
+
       }
 
       if (curState === "walk" && !isWalking) {
@@ -305,7 +318,7 @@ function draw() {
 // facial detection code from:
 // https://github.com/Creativeguru97/YouTube_tutorial/tree/master/Play_with_APIs/ml5_faceApi/face-api_videoInput/final
 function setupFacialRecognition() {
-  video = createCapture(VIDEO); // Create the video: ビデオオブジェクトを作る
+  video = createCapture(VIDEO);
   video.id("video");
   video.size(width / 4, height / 4);
   video.hide();
@@ -333,80 +346,38 @@ function gotFaces(error, result) {
   }
 
   detections = result; //Now all the data in this detections: 全ての検知されたデータがこのdetectionの中に
-  // console.log(detections);
 
-  if (detections.length > 0) {
-    clear();
-    //If at least 1 face is detected: もし1つ以上の顔が検知されていたら
-    let { neutral, happy, angry, sad, disgusted, surprised, fearful } =
-      detections[0].expressions;
-    x = 5;
-    y = 5;
-    textYSpace = 15;
-    text("neutral:       " + nf(neutral * 100, 2, 2) + "%", x, y);
-    text("happiness: " + nf(happy * 100, 2, 2) + "%", x, y + textYSpace);
-    text("anger:        " + nf(angry * 100, 2, 2) + "%", x, y + textYSpace * 2);
-    text("sad:            " + nf(sad * 100, 2, 2) + "%", x, y + textYSpace * 3);
-    text(
-      "disgusted: " + nf(disgusted * 100, 2, 2) + "%",
-      x,
-      y + textYSpace * 4
-    );
-    text(
-      "surprised:  " + nf(surprised * 100, 2, 2) + "%",
-      x,
-      y + textYSpace * 5
-    );
-    text(
-      "fear:           " + nf(fearful * 100, 2, 2) + "%",
-      x,
-      y + textYSpace * 6
-    );
+  if (DEBUG_EXPRESSIONS) {
+    if (detections.length > 0) {
+      clear();
+      let { neutral, happy, angry, sad, disgusted, surprised, fearful } =
+        detections[0].expressions;
+      x = 5;
+      y = 5;
+      textYSpace = 15;
+      text("neutral:       " + nf(neutral * 100, 2, 2) + "%", x, y);
+      text("happiness: " + nf(happy * 100, 2, 2) + "%", x, y + textYSpace);
+      text("anger:        " + nf(angry * 100, 2, 2) + "%", x, y + textYSpace * 2);
+      text("sad:            " + nf(sad * 100, 2, 2) + "%", x, y + textYSpace * 3);
+      text(
+        "disgusted: " + nf(disgusted * 100, 2, 2) + "%",
+        x,
+        y + textYSpace * 4
+      );
+      text(
+        "surprised:  " + nf(surprised * 100, 2, 2) + "%",
+        x,
+        y + textYSpace * 5
+      );
+      text(
+        "fear:           " + nf(fearful * 100, 2, 2) + "%",
+        x,
+        y + textYSpace * 6
+      );
+    }
   }
 
-  // clear(); //Draw transparent background;: 透明の背景を描く
-  // drawExpressions(detections, 20, 250, 14); //Draw face expression: 表情の描画
 
-  faceapi.detect(gotFaces); // Call the function again at here: 認識実行の関数をここでまた呼び出す
+  faceapi.detect(gotFaces);
 }
 
-function drawExpressions(detections, x, y, textYSpace) {
-  if (detections.length > 0) {
-    //If at least 1 face is detected: もし1つ以上の顔が検知されていたら
-    let { neutral, happy, angry, sad, disgusted, surprised, fearful } =
-      detections[0].expressions;
-    textFont("Helvetica Neue");
-    textSize(14);
-    noStroke();
-    fill(44, 169, 225);
-
-    text("neutral:       " + nf(neutral * 100, 2, 2) + "%", x, y);
-    text("happiness: " + nf(happy * 100, 2, 2) + "%", x, y + textYSpace);
-    text("anger:        " + nf(angry * 100, 2, 2) + "%", x, y + textYSpace * 2);
-    text("sad:            " + nf(sad * 100, 2, 2) + "%", x, y + textYSpace * 3);
-    text(
-      "disgusted: " + nf(disgusted * 100, 2, 2) + "%",
-      x,
-      y + textYSpace * 4
-    );
-    text(
-      "surprised:  " + nf(surprised * 100, 2, 2) + "%",
-      x,
-      y + textYSpace * 5
-    );
-    text(
-      "fear:           " + nf(fearful * 100, 2, 2) + "%",
-      x,
-      y + textYSpace * 6
-    );
-  } else {
-    //If no faces is detected: 顔が1つも検知されていなかったら
-    text("neutral: ", x, y);
-    text("happiness: ", x, y + textYSpace);
-    text("anger: ", x, y + textYSpace * 2);
-    text("sad: ", x, y + textYSpace * 3);
-    text("disgusted: ", x, y + textYSpace * 4);
-    text("surprised: ", x, y + textYSpace * 5);
-    text("fear: ", x, y + textYSpace * 6);
-  }
-}

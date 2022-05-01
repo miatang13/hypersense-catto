@@ -2,5 +2,6 @@
   "neutral": "sit",
   "sad": "walk",
   "disgusted": "shake",
-  "fearful": "stretch"
+  "fearful": "stretch",
+  "angry": "knit"
 }
