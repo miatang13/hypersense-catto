@@ -130,8 +130,8 @@ function setup() {
     button2 = createButton("Switch to shake");
     button2.mousePressed(() => addToQueue("shake"));
 
-    button2 = createButton("Switch to knit");
-    button2.mousePressed(() => addToQueue("knit"));
+    button2 = createButton("Switch to stretch");
+    button2.mousePressed(() => addToQueue("stretch"));
   }
 
   console.log("Width:", width);
