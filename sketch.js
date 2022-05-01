@@ -116,7 +116,7 @@ function setup() {
   }
 
   const randX = random(0, width - IMAGE_W);
-  gifPos = createVector(width / 4, height - IMAGE_H);
+  gifPos = createVector(width / 4, height - IMAGE_H * 2);
   gifPosDest = gifPos;
 
   if (DEBUG_ACTIONS) {
@@ -161,7 +161,7 @@ function switchState(nextState) {
       lerpAmt = 0;
       gifPosStart = gifPos;
       const randX = random(IMAGE_W, width - IMAGE_W);
-      gifPosDest = createVector(Math.floor(randX), height - IMAGE_H);
+      gifPosDest = createVector(Math.floor(randX), height - IMAGE_H * 2);
       if (gifPosDest.x <= gifPos.x) {
         gifPosDest.x += width;
       }
