@@ -1,8 +1,8 @@
 const EXPRESSION_RECOGNITION = true;
-const IMAGE_H = 216;
-const IMAGE_W = 384;
+const IMAGE_H = 216 * 2;
+const IMAGE_W = 384 * 2;
 const EXPRESSION_THRESHOLD = 70;
-const DEBUG_ACTIONS = true;
+const DEBUG_ACTIONS = false;
 const DEBUG_EXPRESSIONS = false;
 const DEBUG_WALK = false;
 
@@ -102,6 +102,7 @@ function preload() {
       let img = loadImage(
         "gifs/sequence/" + folderNames[index] + "/" + i.toString() + ".png"
       );
+      img.resize(IMAGE_W, IMAGE_H);
       sequences[index].push(img);
     }
   });
@@ -116,7 +117,7 @@ function setup() {
   }
 
   const randX = random(0, width - IMAGE_W);
-  gifPos = createVector(width / 7, height - IMAGE_H * 1.5);
+  gifPos = createVector(width / 7, height - IMAGE_H * 0.9);
   gifPosDest = gifPos;
 
   if (DEBUG_ACTIONS) {
@@ -135,6 +136,17 @@ function setup() {
   }
 
   console.log("Width:", width);
+}
+
+function keyPressed() {
+  if (keyCode === LEFT_ARROW) {
+    let fs = fullscreen();
+    fullscreen(!fs);
+  }
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
 
 function addToQueue(stateToAdd) {
@@ -161,7 +173,7 @@ function switchState(nextState) {
       lerpAmt = 0;
       gifPosStart = gifPos;
       const randX = random(IMAGE_W, width - IMAGE_W);
-      gifPosDest = createVector(Math.floor(randX), height - IMAGE_H * 1.5);
+      gifPosDest = createVector(Math.floor(randX), height - IMAGE_H * 0.9);
       if (gifPosDest.x <= gifPos.x) {
         gifPosDest.x += width;
       }
@@ -271,7 +283,7 @@ function draw() {
   if (isSequence) {
     // console.log("We are in sequence with state: ", curState);
     let idx = Math.floor(sequenceIdx / FRAME_RATE);
-    image(sequence[idx], gifPos.x, height - IMAGE_H * 1.5);
+    image(sequence[idx], gifPos.x, height - IMAGE_H * 0.9);
     if (sequenceIdx < sequenceMax * FRAME_RATE) {
       // still playing sequence
       sequenceIdx++;
@@ -294,11 +306,7 @@ function draw() {
         if (DEBUG_WALK) {
           // draw destination
           console.log("pos", gifPos.x, "dest", gifPosDest.x);
-          circle(
-            (gifPosDest.x % width) + IMAGE_W / 2,
-            height - IMAGE_H * 1.5,
-            40
-          );
+          circle((gifPosDest.x % width) + IMAGE_W / 2, height - IMAGE_H, 40);
         }
       }
 
@@ -312,7 +320,7 @@ function draw() {
       }
     }
 
-    image(curGif, x % width, height - IMAGE_H * 1.5);
+    image(curGif, x % width, height - IMAGE_H * 0.9);
     gifPos.x = x;
     gifPrevPos = gifPos;
   }
