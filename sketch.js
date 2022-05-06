@@ -1,6 +1,6 @@
 const EXPRESSION_RECOGNITION = true;
-const IMAGE_H = 216 * 2;
-const IMAGE_W = 384 * 2;
+const IMAGE_H = 216;
+const IMAGE_W = 384;
 const EXPRESSION_THRESHOLD = 70;
 const DEBUG_ACTIONS = false;
 const DEBUG_EXPRESSIONS = false;
@@ -102,7 +102,6 @@ function preload() {
       let img = loadImage(
         "gifs/sequence/" + folderNames[index] + "/" + i.toString() + ".png"
       );
-      img.resize(IMAGE_W, IMAGE_H);
       sequences[index].push(img);
     }
   });
@@ -283,6 +282,7 @@ function draw() {
   if (isSequence) {
     // console.log("We are in sequence with state: ", curState);
     let idx = Math.floor(sequenceIdx / FRAME_RATE);
+
     image(sequence[idx], gifPos.x, height - IMAGE_H * 0.9);
     if (sequenceIdx < sequenceMax * FRAME_RATE) {
       // still playing sequence
@@ -319,7 +319,6 @@ function draw() {
         switchState(AnimationQueue.shift());
       }
     }
-
     image(curGif, x % width, height - IMAGE_H * 0.9);
     gifPos.x = x;
     gifPrevPos = gifPos;
